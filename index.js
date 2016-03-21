@@ -1,7 +1,7 @@
 var inherits = require('util').inherits
   , request = require('request');
 
-var Streamer = require('./base');
+var Streamer = require('butter-base-streamer');
 
 /* -- HTTP Streamer -- */
 function HttpStreamer(source, options) {
@@ -27,6 +27,12 @@ function HttpStreamer(source, options) {
 	this._streamify.resolve(this._req);
 }
 inherits(HttpStreamer, Streamer);
+
+HttpStreamer.prototype.config = {
+	name: 'HTTP Streamer',
+	protocol: /https?/,
+	type: 'http'
+}
 
 HttpStreamer.prototype.seek = function(start, end) {
 	if(this._destroyed) throw new ReferenceError('Streamer already destroyed');

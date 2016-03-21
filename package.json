@@ -20,5 +20,8 @@
   "bugs": {
     "url": "https://github.com/butterstreamers/butter-streamer-http/issues"
   },
-  "homepage": "https://github.com/butterstreamers/butter-streamer-http#readme"
+  "homepage": "https://github.com/butterstreamers/butter-streamer-http#readme",
+  "dependencies": {
+    "butter-base-streamer": "0.0.1"
+  }
 }
