@@ -1,79 +1,50 @@
-var inherits  = require('util').inherits
-    , request = require('request')
-    , debug   = require('debug')('butter-streamer-http');
+var inherits = require('util').inherits
+  , URI = require('URIjs')
+  , fs = require('fs');
 
 var Streamer = require('butter-base-streamer');
 
-/* -- HTTP Streamer -- */
-function HttpStreamer(source, options) {
-	if(!(this instanceof HttpStreamer))
-		return new HttpStreamer(source, options);
+/* -- File Streamer -- */
+function FileStreamer(source, options) {
+	if(!(this instanceof FileStreamer)) 
+		return new FileStreamer(source, options);
 
 	Streamer.call(this, options);
 	var self = this;
 	options = options || {};
 
-	this.request = request.defaults({
-		encoding: null
-	});
+	if(URI(source).protocol() === 'file') {
+		source = URI(source).path();
+	}
 
 	this._options = options;
 	this._source = source;
-	this._req = this.request(source, options.http);
-	this._req.on('response', function(res) {
-		var length = self._req.getHeader('content-length', res.headers);
-		debug('got response', length)
 
-		if(length !== undefined) {
-			self._progress.setLength(parseInt(length));
-			self.file.length = length;
-		}
+	this._fileStream = fs.createReadStream(source);
 
-		self._isReady();
-	})
-	this._streamify.resolve(this._req);
+	this._streamify.resolve(this._fileStream);
+	this._isReady();
 }
-inherits(HttpStreamer, Streamer);
+inherits(FileStreamer, Streamer);
 
-HttpStreamer.prototype.config = {
-	name: 'HTTP Streamer',
-	protocol: /https?/,
-	type: 'http',
-	priority: 100
-}
-
-HttpStreamer.prototype.seek = function(start, end) {
+FileStreamer.prototype.seek = function(start, end) {
 	if(this._destroyed) throw new ReferenceError('Streamer already destroyed');
 
 	var self = this;
 	start = start || 0;
 
-	if(this._req)
-		this._req.destroy();
-
-	this._req = this.request(this._source, {
-		headers: {
-			'Range': 'bytes=' + start + '-' + (end !== undefined ? end : '')
-		}
-	}).on('response', function(res) {
-		var length = self._req.getHeader('content-length', res.headers);
-		if(length !== undefined)
-			self._progress.setLength(parseInt(length));
-	})
+	this._fileStream = fs.createReadStream(this._source, {start: start, end: end});
 
 	this._streamify.unresolve();
-	this._streamify.resolve(this._req);
+	this._streamify.resolve(this._fileStream);
 }
 
-HttpStreamer.prototype.destroy = function() {
+FileStreamer.prototype.destroy = function() {
 	if(this._destroyed) throw new ReferenceError('Streamer already destroyed');
 
-	if(this._req)
-		this._req.destroy();
 	this._streamify.unresolve();
-	this._req = null;
+	this._fileStream = null;
 	this._destroyed = true;
-	this.file = {};
 }
 
-module.exports = HttpStreamer;
+module.exports = FileStreamer;
