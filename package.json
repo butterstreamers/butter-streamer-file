@@ -1,10 +1,14 @@
 {
   "name": "butter-streamer-file",
-  "version": "0.0.3",
+  "version": "0.1.0",
   "description": "Butter Streamer for file streams, the simplest around",
   "main": "index.js",
+  "butter": {
+    "testArgs": "file?uri=\"./index.js\""
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha node_modules/butter-test-streamer",
+    "lint": "standard --env mocha"
   },
   "repository": {
     "type": "git",
@@ -22,8 +26,11 @@
   },
   "homepage": "https://github.com/butterstreamers/butter-streamer-file#readme",
   "dependencies": {
-    "butter-base-streamer": "^0.0.2",
-    "debug": "^2.2.0",
-    "request": "^2.69.0"
+    "butter-streamer": "butterstreamers/butter-streamer",
+    "debug": "^3.1.0",
+    "urijs": "^1.19.1"
+  },
+  "devDependencies": {
+    "butter-test-streamer": "butterstreamers/butter-test-streamer"
   }
 }

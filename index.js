@@ -1,50 +1,49 @@
-var inherits = require('util').inherits
-  , URI = require('URIjs')
-  , fs = require('fs');
+const URI = require('urijs')
+const fs = require('fs')
+const debug = require('debug')('butter-streamer-file')
 
-var Streamer = require('butter-base-streamer');
+var Streamer = require('butter-streamer')
 
-/* -- File Streamer -- */
-function FileStreamer(source, options) {
-	if(!(this instanceof FileStreamer)) 
-		return new FileStreamer(source, options);
+const config = {
+	name: 'Simple File Streamer',
+	protocol: /file/,
+	type: 'file',
+	priority: 10
+}
 
-	Streamer.call(this, options);
-	var self = this;
-	options = options || {};
+class FileStreamer extends Streamer {
+	constructor (source, options = {}) {
+		super(options, config)
+		if (URI(source).protocol() === 'file') {
+			source = URI(source).path()
+		}
 
-	if(URI(source).protocol() === 'file') {
-		source = URI(source).path();
+		debug('source', source)
+		this._source = source
+		fs.stat(source, (err, stats) => {
+			if (err) throw err
+
+			this.stats = stats
+
+			debug('stats', stats)
+			this._fileStream = fs.createReadStream(source)
+
+			this.ready(this._fileStream, stats.size)
+		})
 	}
 
-	this._options = options;
-	this._source = source;
+	seek (start = 0, end) {
+		if (this._destroyed) throw new ReferenceError('Streamer already destroyed')
 
-	this._fileStream = fs.createReadStream(source);
+		this._fileStream = fs.createReadStream(this._source, {start: start, end: end})
 
-	this._streamify.resolve(this._fileStream);
-	this._isReady();
-}
-inherits(FileStreamer, Streamer);
+		this.reset(this._fileStream, this.stats.size - start)
+  }
 
-FileStreamer.prototype.seek = function(start, end) {
-	if(this._destroyed) throw new ReferenceError('Streamer already destroyed');
-
-	var self = this;
-	start = start || 0;
-
-	this._fileStream = fs.createReadStream(this._source, {start: start, end: end});
-
-	this._streamify.unresolve();
-	this._streamify.resolve(this._fileStream);
+  destroy () {
+    super.destroy()
+    this._fileStream = null
+  }
 }
 
-FileStreamer.prototype.destroy = function() {
-	if(this._destroyed) throw new ReferenceError('Streamer already destroyed');
-
-	this._streamify.unresolve();
-	this._fileStream = null;
-	this._destroyed = true;
-}
-
-module.exports = FileStreamer;
+module.exports = FileStreamer
