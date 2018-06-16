@@ -1,10 +1,10 @@
 const URI = require('urijs')
 const fs = require('fs')
 const mime = require('mime')
-const EventEmitter = require('events').EventEmitter
 const debug = require('debug')('butter-streamer-file')
 
-var Streamer = require('butter-streamer')
+const ProgressStreamer = require('butter-streamer/progress/streamer')
+const ProgressFile = require('butter-streamer/progress/file')
 
 const config = {
   name: 'Simple File Streamer',
@@ -13,21 +13,21 @@ const config = {
   priority: 10
 }
 
-class FsFile extends EventEmitter {
+class FsFile extends ProgressFile {
   constructor(source, {type, ...info}) {
-    super()
+    super(info.length)
 
     Object.assign(this, info)
     this.source = source
     this.path = type
   }
 
-  createReadStream(range) {
+  _createReadStream(range) {
     return fs.createReadStream(this.source, range)
   }
 }
 
-class FileStreamer extends Streamer {
+class FileStreamer extends ProgressStreamer {
   constructor (source, options) {
     if (URI(source).protocol() === 'file') {
       source = URI(source).path()
